@@ -77,15 +77,48 @@
 			// empty items list in view:
 			view.itemsList.innerHTML = '';
 			// reverse array:
-			var reversedArr = sale.items;
-			reversedArr.reverse();
+			//var reversedArr = sale.items;
+			//reversedArr.reverse();
+
+			
+			//this function is for the event listener of the remove button
+			//you need to save de index or otherwise the index will be always equals to the last iteration number
+
+			function removeListener(index){
+				return function(){
+					//Removing the disire elemenet of the array
+					sale.items.splice(index,1);
+					//updating list
+					view.updateItemsListView(sale);
+					//updating totals
+					sale.updateTotals();
+					view.totals.innerText = sale.totals.toFixed(2);
+				};
+			}
+			
 
 			// update Items from current sale in view:
-			for (var i = 0; i < reversedArr.length; i++) {
+			// -- Change: The array is read form the last element to the first
+			//            without calling the reverse method
+			
+			for (var i = (sale.items.length - 1); i >= 0; i--) {
+				var removeButton = document.createElement("BUTTON");
+				var text = document.createTextNode("X");
+				removeButton.appendChild(text);
+
+				
 				var element = document.createElement('h5');
 				element.innerHTML = sale.items[i].name;
+				element.appendChild(removeButton);
+				
 				view.itemsList.appendChild(element);
+				removeButton.addEventListener('click', removeListener(i));
+
 			}
+
+			
+
+
 		}
 
 	}
