@@ -1,126 +1,155 @@
-(function () {
-	'use strict';
 
-	var sale = {};
+//With module refactoring using the Module Pattern and little modification
+var PoS_app = (function(){
+		
+		//My Sale class
+		var sale = (function(){
+			
+			//Variables
+			var items = [];
+			var productsCatalog = [
+				new Product('111', 'Milk', 1.99),
+				new Product('222', 'Beer', 2.99),
+				new Product('333', 'Coke', 3.99),
+			];
+			var totals = 0;
 
-	init();
-
-	var productsCatalog = [
-		new Product('111', 'Milk', 1.99),
-		new Product('222', 'Beer', 2.99),
-		new Product('333', 'Coke', 3.99),
-	];
-
-	function Product(sku, name, price) {
-		this.sku = sku;
-		this.name = name;
-		this.price = price;
-	}
-
-	function Item(product, quantity) {
-		this.product = product;
-		this.quantity = quantity;
-	}
-
-	function Sale() {
-		this.items = [];
-		this.totals = 0;
-
-		this.addProduct = function (product) {
-			sale.items.push(product);
-			this.updateTotals();
-		}
-
-		this.updateTotals = function () {
-			this.totals = 0;
-			for (var i = 0; i < this.items.length; i++) {
-				this.totals += this.items[i].price;
+			//Private Methods---------------------------------------------------
+			function Product(sku,name,price){
+				this.sku = sku;
+				this.name = name;
+				this.price = price;
 			}
-		}
-	}
-
-	function findProductBySKU(sku) {
-		var product = false;
-		for (var i = 0; i < productsCatalog.length; i++) {
-			if (productsCatalog[i].sku == sku) {
-				product = productsCatalog[i];
-			}
-		}
-		return product;
-	}
-
-	function init() {
-		var view = {};
-		view.captureButton = document.getElementById('capture');
-		view.skuInput = document.getElementById('sku');
-		view.itemsList = document.getElementById('items-list');
-		view.totals = document.getElementById('totals');
-
-		sale = new Sale();
-
-		view.captureButton.addEventListener('click', function(event) {
-			var product = findProductBySKU(view.skuInput.value);
-			if (product) {
-				// add product to sale model:
-				sale.addProduct(product);
-				view.updateItemsListView(sale);
-
-				// update totals in view:
-				view.totals.innerText = sale.totals.toFixed(2);
-
-			} else {
-				alert('Producto no encontrado');
-			}
-		});
-
-		view.updateItemsListView = function (sale) {
-			// empty items list in view:
-			view.itemsList.innerHTML = '';
-			// reverse array:
-			//var reversedArr = sale.items;
-			//reversedArr.reverse();
 
 			
-			//this function is for the event listener of the remove button
-			//you need to save de index or otherwise the index will be always equals to the last iteration number
 
-			function removeListener(index){
+			//Public Methods----------------------------------------------------
+			function findProductBySku(sku){
+				var product = false;
+				for (var i = 0; i < productsCatalog.length; i++) {
+					if (productsCatalog[i].sku == sku) {
+						product = productsCatalog[i];
+					}
+				}
+				return product;
+			}
+
+			function addProduct(product){
+				items.push(product);
+			}
+
+			function getProductName(index){
+				return items[index].name;
+			}
+
+			function removeProduct(index){
+				//Removing the disire elemenet of the array
+				items.splice(index,1);
+			}
+
+			function updateTotals(){
+				totals = 0;
+				for (var i = 0; i < items.length; i++) {
+					totals += items[i].price;
+				}
+
+				return totals;
+			}
+
+			function getCount(){
+				return items.length;
+			}
+
+
+
+			return{
+				//Methods
+				makeSale:addProduct,
+				findBySKU:findProductBySku,
+				remove:removeProduct,
+				//Getters
+				getTotals:updateTotals,
+				getItemsCount:getCount,
+				getProduct:getProductName
+			};
+
+
+		})();
+
+		//My View class
+		var view = (function(){
+			//Loading DOM elements
+			var elements = {};
+			elements.captureButton = document.getElementById('capture');
+		    elements.skuInput = document.getElementById('sku');
+		    elements.itemsList = document.getElementById('items-list');
+		    elements.totals = document.getElementById('totals');
+
+		    //Initial instance and public method of view class
+		    function init(){
+		    	elements.captureButton.addEventListener('click', function(event){
+		    		var product = sale.findBySKU(elements.skuInput.value);
+		    		//alert(product.name);
+					if (product) {
+						// add product to sale model:
+
+						sale.makeSale(product);
+						updateItemsListView();
+
+						// update totals in view:
+						elements.totals.innerText = sale.getTotals();
+
+					} else {
+						alert('Producto no encontrado');
+					}
+		    	});
+		    }
+		    //Pirvate methods
+		    //Function listener for the remove button
+		    function removeListener(index){
 				return function(){
-					//Removing the disire elemenet of the array
-					sale.items.splice(index,1);
+					//Removing the product from the sale list by calling the remove method form sale class
+					sale.remove(index);
 					//updating list
-					view.updateItemsListView(sale);
+					updateItemsListView();
 					//updating totals
-					sale.updateTotals();
-					view.totals.innerText = sale.totals.toFixed(2);
+					elements.totals.innerText = sale.getTotals();
 				};
 			}
-			
 
-			// update Items from current sale in view:
-			// -- Change: The array is read form the last element to the first
-			//            without calling the reverse method
-			
-			for (var i = (sale.items.length - 1); i >= 0; i--) {
-				var removeButton = document.createElement("BUTTON");
-				var text = document.createTextNode("X");
-				removeButton.appendChild(text);
+			//View Updater
+		    function updateItemsListView(){
 
-				
-				var element = document.createElement('h5');
-				element.innerHTML = sale.items[i].name;
-				element.appendChild(removeButton);
-				
-				view.itemsList.appendChild(element);
-				removeButton.addEventListener('click', removeListener(i));
+		    	elements.itemsList.innerHTML = '';
+		    	//Displaying products on the view
+		    	for (var i = (sale.getItemsCount() - 1); i >= 0; i--) {
+					var removeButton = document.createElement("BUTTON");
+					var text = document.createTextNode("X");
+					removeButton.appendChild(text);
 
+					
+					var element = document.createElement('h5');
+					element.innerHTML = sale.getProduct(i);
+					element.appendChild(removeButton);
+					
+					elements.itemsList.appendChild(element);
+					removeButton.addEventListener('click', removeListener(i));
+
+				}
+		    }
+
+		    return{
+				load:init
+			};
+
+		})();
+
+		//The "Main" function of the app to write all the logic of the program
+		return{
+			main:function(){
+				view.load();
 			}
-
-			
-
-
-		}
-
-	}
-
+		};
 })();
+
+PoS_app.main();
