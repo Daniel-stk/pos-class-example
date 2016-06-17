@@ -53,7 +53,7 @@ var PoS_app = (function(){
 					totals += items[i].price;
 				}
 
-				return totals;
+				return totals.toFixed(2);
 			}
 
 			function getCount(){
